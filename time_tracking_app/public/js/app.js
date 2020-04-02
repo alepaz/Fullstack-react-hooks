@@ -1,20 +1,13 @@
 const TimersDashboard = props => {
-  const [timers, setTimers] = React.useState([
-    {
-      title: "Practice squat",
-      project: "Gym Chores",
-      id: uuid.v4(),
-      elapsed: 5456099,
-      runningSince: Date.now()
-    },
-    {
-      title: "Bake squash",
-      project: "Kitchen Chores",
-      id: uuid.v4(),
-      elapsed: 1273998,
-      runningSince: null
-    }
-  ]);
+  const [timers, setTimers] = React.useState([]);
+
+  React.useEffect(() => {
+    loadTimersFromServer();
+  }, []);
+
+  const loadTimersFromServer = () => {
+    client.getTimers(serverTimers => setTimers(serverTimers));
+  };
 
   const handleCreateFormSubmit = timer => {
     createTimer(timer);
@@ -39,6 +32,7 @@ const TimersDashboard = props => {
   const createTimer = timer => {
     const t = helpers.newTimer(timer);
     setTimers(timers.concat(t));
+    client.createTimer(t);
   };
 
   const updateTimer = attrs => {
@@ -54,10 +48,12 @@ const TimersDashboard = props => {
         }
       })
     );
+    client.updateTimer(attrs);
   };
 
   const deleteTimer = timerId => {
     setTimers(timers.filter(timer => timer.id !== timerId));
+    client.deleteTimer({ id: timerId });
   };
 
   const startTimer = timerId => {
@@ -73,6 +69,9 @@ const TimersDashboard = props => {
         }
       })
     );
+    client
+      .startTimer({ id: timerId, start: now })
+      .then(loadTimersFromServer);
   };
 
   const stopTimer = timerId => {
@@ -90,6 +89,7 @@ const TimersDashboard = props => {
         }
       })
     );
+    client.stopTimer({ id: timerId, start: now });
   };
 
   return (
