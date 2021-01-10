@@ -1,3 +1,5 @@
+import React from "react";
+
 function createStore(reducer, initialState) {
   let state = initialState;
   const listeners = [];
@@ -6,12 +8,10 @@ function createStore(reducer, initialState) {
 
   const dispatch = (action) => {
     state = reducer(state, action);
-    listeners.forEach(l => l());
+    listeners.forEach((l) => l());
   };
 
-  const subscribe = (listener) => (
-    listeners.push(listener)
-  );
+  const subscribe = (listener) => listeners.push(listener);
 
   return {
     subscribe,
@@ -21,15 +21,17 @@ function createStore(reducer, initialState) {
 }
 
 function reducer(state, action) {
-  if (action.type === "ADD_MESSAGE") {
+  if (action.type === 'ADD_MESSAGE') {
     return {
-      messages: state.messages.concat(action.messages),
+      messages: state.messages.concat(action.message),
     };
-  } else if (action.type === "DELETE_MESSAGE") {
+  } else if (action.type === 'DELETE_MESSAGE') {
     return {
       messages: [
         ...state.messages.slice(0, action.index),
-        ...state.messages.slice(action.index + 1, state.messages.length),
+        ...state.messages.slice(
+          action.index + 1, state.messages.length
+        ),
       ],
     };
   } else {
@@ -38,33 +40,69 @@ function reducer(state, action) {
 }
 
 const initialState = { messages: [] };
-
 const store = createStore(reducer, initialState);
 
-const listener = () => {
-  console.log('current state :');
-  console.log(store.getState());
+class App extends React.Component {
+  componentDidMount() {
+    store.subscribe(() => this.forceUpdate());
+  }
+  render() {
+    const messages = store.getState().messages;
+    console.log({messages});
+    return (
+      <div className="ui segment">
+        <MessageView messages={messages} />
+        <MessageInput />
+      </div>
+    );
+  }
 }
 
-store.subscribe(listener);
+class MessageInput extends React.Component {
+  state = {
+    value: "",
+  };
 
-const addMessageAction1 = {
-  type: "ADD_MESSAGE",
-  messages: "How do you read?",
-};
+  onChange = (e) => {
+    this.setState({ value: e.target.value });
+  };
 
-store.dispatch(addMessageAction1);
+  handleSubmit = () => {
+    store.dispatch({ type: "ADD_MESSAGE", message: this.state.value });
+    this.setState({ value: "" });
+  };
 
-const addMessageAction2 = {
-  type: "ADD_MESSAGE",
-  messages: "I read you loud and clear Houston.",
-};
-
-store.dispatch(addMessageAction2);
-
-const deleteMessageAction = {
-  type: 'DELETE_MESSAGE',
-  index: 0,
+  render() {
+    return (
+      <div className="ui input">
+        <input onChange={this.onChange} value={this.state.value} type="text" />
+        <button
+          onClick={this.handleSubmit}
+          className="ui primary button"
+          type="submit"
+        />
+      </div>
+    );
+  }
 }
 
-store.dispatch(deleteMessageAction);
+class MessageView extends React.Component {
+  handleClick = (index) => {
+    store.dispatch({ type: "DELETE_MESSAGE", index: index });
+  };
+
+  render() {
+    const messages = this.props.messages.map((message, index) => (
+      <div
+        className="comment"
+        key={index}
+        onClick={() => this.handleClick(index)}
+      >
+        {message}
+      </div>
+    ));
+    return messages;
+  }
+}
+
+export default App;
