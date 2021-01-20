@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import uuid from "uuid";
 import { createStore, combineReducers } from "redux";
 import { Provider, connect } from "react-redux";
@@ -165,38 +165,26 @@ const mapDispatchToTabsProps = (dispatch) => ({
 
 const ThreadTabs = connect(mapStateToTabsProps, mapDispatchToTabsProps)(Tabs);
 
-class TextFieldSubmit extends React.Component {
-  state = {
-    value: "",
+function TextFieldSubmit({ onSubmit }) {
+  const [value, setValue] = useState("");
+  const onChange = (e) => setValue(e.target.value);
+  const handleSubmit = () => {
+    onSubmit(value);
+    setValue("");
   };
 
-  onChange = (e) => {
-    this.setState({
-      value: e.target.value,
-    });
-  };
-
-  handleSubmit = () => {
-    this.props.onSubmit(this.state.value);
-    this.setState({
-      value: "",
-    });
-  };
-
-  render() {
-    return (
-      <div className="ui input">
-        <input onChange={this.onChange} value={this.state.value} type="text" />
-        <button
-          onClick={this.handleSubmit}
-          className="ui primary button"
-          type="submit"
-        >
-          Submit
-        </button>
-      </div>
-    );
-  }
+  return (
+    <div className="ui input">
+      <input onChange={onChange} value={value} type="text" />
+      <button
+        onClick={handleSubmit}
+        className="ui primary button"
+        type="submit"
+      >
+        Submit
+      </button>
+    </div>
+  );
 }
 
 const MessageList = (props) => (
