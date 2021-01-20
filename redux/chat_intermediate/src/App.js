@@ -1,6 +1,7 @@
 import React from "react";
 import uuid from "uuid";
 import { createStore, combineReducers } from "redux";
+import { Provider, connect } from "react-redux";
 
 const reducer = combineReducers({
   activeThreadId: activeThreadIdReducer,
@@ -92,7 +93,13 @@ const App = () => (
     <ThreadTabs />
     <ThreadDisplay />
   </div>
-)
+);
+
+const WrappedApp = () => (
+  <Provider store={store}>
+    <App />
+  </Provider>
+);
 
 const Thread = (props) => (
   <div className="ui center aligned basic segment">
@@ -104,31 +111,41 @@ const Thread = (props) => (
   </div>
 );
 
-class ThreadTabs extends React.Component {
-  componentDidMount() {
-    store.subscribe(() => this.forceUpdate());
-  }
+const Tabs = (props) => (
+  <div className="ui top attached tabular menu">
+    {props.tabs.map((tab, index) => (
+      <div
+        key={index}
+        className={tab.active ? "active item" : "item"}
+        onClick={() => props.onClick(tab.id)}
+      >
+        {tab.title}
+      </div>
+    ))}
+  </div>
+);
 
-  render() {
-    const state = store.getState();
-    const tabs = state.threads.map((t) => ({
-      title: t.title,
-      active: t.id === state.activeThreadId,
-      id: t.id,
-    }));
-    return (
-      <Tabs
-        tabs={tabs}
-        onClick={(id) =>
-          store.dispatch({
-            type: "OPEN_THREAD",
-            id: id,
-          })
-        }
-      />
-    );
-  }
-}
+const mapStateToTabsProps = (state) => {
+  const tabs = state.threads.map((t) => ({
+    title: t.title,
+    active: t.id === state.activeThreadId,
+    id: t.id,
+  }));
+
+  return {
+    tabs,
+  };
+};
+
+const mapDispatchToTabsProps = (dispatch) => ({
+  onClick: (id) =>
+    dispatch({
+      type: "OPEN_THREAD",
+      id: id,
+    }),
+});
+
+const ThreadTabs = connect(mapStateToTabsProps, mapDispatchToTabsProps)(Tabs);
 
 class TextFieldSubmit extends React.Component {
   state = {
@@ -177,50 +194,34 @@ const MessageList = (props) => (
   </div>
 );
 
-class ThreadDisplay extends React.Component {
+const mapStateToThreadProps = (state) => ({
+  thread: state.threads.find((t) => t.id === state.activeThreadId),
+});
 
-  componentDidMount() {
-    store.subscribe(() => this.forceUpdate());
-  }
+const mapDispatchToThreadsProps = (dispatch) => ({
+  onMessageClick: (id) =>
+    dispatch({
+      type: "DELETE_MESSAGE",
+      id: id,
+    }),
+  dispatch: dispatch,
+});
 
-  render() {
-    const state = store.getState();
-    const activeThreadId = state.activeThreadId;
-    const activeThread = state.threads.find((t) => t.id === activeThreadId);
+const mergeThreadProps = (stateProps, dispatchProps) => ({
+  ...stateProps,
+  ...dispatchProps,
+  onMessageSubmit: (text) =>
+    dispatchProps.dispatch({
+      type: "ADD_MESSAGE",
+      text: text,
+      threadId: stateProps.thread.id,
+    }),
+});
 
-    return (
-      <Thread
-        thread={activeThread}
-        onMessageClick={(id) =>
-          store.dispatch({
-            type: "DELETE_MESSAGE",
-            id: id,
-          })
-        }
-        onMessageSubmit={(text) =>
-          store.dispatch({
-            type: "ADD_MESSAGE",
-            text: text,
-            threadId: activeThreadId,
-          })
-        }
-      />
-    );
-  }
-}
+const ThreadDisplay = connect(
+  mapStateToThreadProps,
+  mapDispatchToThreadsProps,
+  mergeThreadProps
+)(Thread);
 
-const Tabs = (props) => (
-  <div className="ui top attached tabular menu">
-    {props.tabs.map((tab, index) => (
-      <div
-        key={index}
-        className={tab.active ? "active item" : "item"}
-        onClick={() => props.onClick(tab.id)}
-      >
-        {tab.title}
-      </div>
-    ))}
-  </div>
-);
-
-export default App;
+export default WrappedApp;
