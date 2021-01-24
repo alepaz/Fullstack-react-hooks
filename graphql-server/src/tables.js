@@ -67,6 +67,7 @@ const posts = sql.define({
 });
 
 const dbIdToNodeId = (dbId, tableName) => {
+  
   return `${tableName}:${dbId}`;
 };
 
