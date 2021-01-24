@@ -8,6 +8,7 @@ const {
 } = require("graphql");
 
 const tables = require("./tables");
+const loaders = require("./loaders");
 
 const NodeInterface = new GraphQLInterfaceType({
   name: "Node",
@@ -41,6 +42,16 @@ const UserType = new GraphQLObjectType({
     },
     about: {
       type: new GraphQLNonNull(GraphQLString),
+    },
+    friends: {
+      type: new GraphQLNonNull(GraphQLID),
+      resolve(source) {
+        return loaders.getFriendIdsForUser(source).then((rows) => {
+          return rows.map((row) => {
+            return tables.dbIdToNodeId(row.user_id_b, row.__tableName);
+          });
+        });
+      },
     },
   },
 });
