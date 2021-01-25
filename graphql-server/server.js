@@ -1,6 +1,7 @@
 console.log({ starting: true });
 
 const express = require("express");
+const basicAuth = require("basic-auth-connect");
 const graphqlHTTP = require("express-graphql");
 const {
   GraphQLSchema,
@@ -20,6 +21,12 @@ const RootQuery = new GraphQLObjectType({
   name: "RootQuery",
   description: "The root query",
   fields: {
+    viewer: {
+      type: NodeInterface,
+      resolve(source, args, context) {
+        return loaders.getNodeById(context);
+      },
+    },
     node: {
       type: NodeInterface,
       args: {
@@ -64,10 +71,16 @@ const Schema = new GraphQLSchema({
 });
 
 app.use(
+  basicAuth(function (user, pass) {
+    return pass === "mypassword1";
+  })
+);
+
+app.use(
   "/graphql",
-  graphqlHTTP({
-    schema: Schema,
-    graphiql: true,
+  graphqlHTTP((req) => {
+    const context = "users:" + req.user;
+    return { schema: Schema, graphiql: true, context: context, pretty: true };
   })
 );
 
