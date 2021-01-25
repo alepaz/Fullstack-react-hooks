@@ -11,6 +11,7 @@ const {
 
 const tables = require("./tables");
 const loaders = require("./loaders");
+const { connectionDefinitions } = require("graphql-relay");
 
 const NodeInterface = new GraphQLInterfaceType({
   name: "Node",
@@ -116,48 +117,8 @@ const PostType = new GraphQLObjectType({
   },
 });
 
-const PageInfoType = new GraphQLObjectType({
-  name: "PageInfo",
-  fields: {
-    hasNextPage: {
-      type: new GraphQLNonNull(GraphQLBoolean),
-    },
-    hasPreviousPage: {
-      type: new GraphQLNonNull(GraphQLBoolean),
-    },
-    startCursor: {
-      type: GraphQLString,
-    },
-    endCursor: {
-      type: GraphQLString,
-    },
-  },
-});
-
-const PostEdgeType = new GraphQLObjectType({
-  name: "PostEdge",
-  fields: () => {
-    return {
-      cursor: {
-        type: new GraphQLNonNull(GraphQLString),
-      },
-      node: {
-        type: new GraphQLNonNull(PostType),
-      },
-    };
-  },
-});
-
-const PostsConnectionType = new GraphQLObjectType({
-  name: "PostsConnection",
-  fields: {
-    pageInfo: {
-      type: new GraphQLNonNull(PageInfoType),
-    },
-    edges: {
-      type: new GraphQLList(PostEdgeType),
-    },
-  },
+const { connectionType: PostsConnectionType } = connectionDefinitions({
+  nodeType: PostType
 });
 
 exports.NodeInterface = NodeInterface;
