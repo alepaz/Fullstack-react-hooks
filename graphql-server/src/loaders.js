@@ -90,8 +90,8 @@ const getPostIdsForUser = (userSource, args, context) => {
 
   return Promise.all([
     database.getSql(query.toQuery()),
-    getFriendshipLevels(context)
-  ]).then(([ allRows, friendshipLevels ]) => {
+    getFriendshipLevels(context),
+  ]).then(([allRows, friendshipLevels]) => {
     allRows = allRows.filter((row) => {
       return canAccessLevel(friendshipLevels[userSource.id], row.level);
     });
@@ -99,7 +99,7 @@ const getPostIdsForUser = (userSource, args, context) => {
 
     rows.forEach((row) => {
       row.__tableName = tables.posts.getName();
-      row.__cursor = row.id + ':' + row.created_at;
+      row.__cursor = row.id + ":" + row.created_at;
     });
 
     const hasNextPage = allRows.length > first;
@@ -123,9 +123,7 @@ const getFriendshipLevels = (nodeId) => {
   const { dbId } = tables.splitNodeId(nodeId);
 
   const table = tables.usersFriends;
-  let query = table
-    .select(table.star())
-    .where(table.user_id_a.equals(dbId));
+  let query = table.select(table.star()).where(table.user_id_a.equals(dbId));
 
   return database.getSql(query.toQuery()).then((rows) => {
     const levelMap = {};
@@ -137,13 +135,32 @@ const getFriendshipLevels = (nodeId) => {
 };
 
 const canAccessLevel = (viewerLevel, contentLevel) => {
-  const levels = ['public', 'acquaintance', 'friend', 'top'];
+  const levels = ["public", "acquaintance", "friend", "top"];
   const viewerLevelIndex = levels.indexOf(viewerLevel);
   const contentLevelIndex = levels.indexOf(contentLevel);
 
   return viewerLevelIndex >= contentLevelIndex;
 };
 
+const createPost = (body, level, context) => {
+  const { dbId } = tables.splitNodeId(context);
+  const created_at = new Date().toISOString().split("T")[0];
+  const posts = [{ body, level, created_at, user_id: dbId }];
+
+  let query = tables.posts.insert(posts).toQuery();
+  return database
+    .getSql(query)
+    .then(() => {
+      return database.getSql({
+        text: "SELECT last_insert_rowid() as id FROM posts",
+      });
+    })
+    .then((ids) => {
+      return tables.dbIdToNodeId(ids[0].id, tables.posts.getName());
+    });
+};
+
+exports.createPost = createPost;
 exports.getUserNodeWithFriends = getUserNodeWithFriends;
 exports.getNodeById = getNodeById;
 exports.getFriendIdsForUser = getFriendIdsForUser;

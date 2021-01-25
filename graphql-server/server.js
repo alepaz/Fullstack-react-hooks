@@ -9,7 +9,26 @@ const {
   GraphQLString,
   GraphQLNonNull,
   GraphQLID,
+  GraphQLEnumType,
 } = require("graphql");
+
+const LevelEnum = new GraphQLEnumType({
+  name: "PrivacyLevel",
+  values: {
+    PUBLIC: {
+      value: "public",
+    },
+    ACQUAINTANCE: {
+      value: "acquaintance",
+    },
+    FRIEND: {
+      value: "friend",
+    },
+    TOP: {
+      value: "top",
+    },
+  },
+});
 
 const { NodeInterface, PostType, UserType } = require("./src/types");
 
@@ -42,10 +61,29 @@ const RootQuery = new GraphQLObjectType({
 });
 
 let inMemoryStore = {};
+
 const RootMutation = new GraphQLObjectType({
   name: "RootMutation",
   description: "The root mutation",
   fields: {
+    createPost: {
+      type: PostType,
+      args: {
+        body: {
+          type: new GraphQLNonNull(GraphQLString),
+        },
+        level: {
+          type: new GraphQLNonNull(LevelEnum),
+        },
+      },
+      resolve(source, args, context) {
+        return loaders
+          .createPost(args.body, args.level, context)
+          .then((nodeId) => {
+            return loaders.getNodeById(nodeId);
+          });
+      },
+    },
     setNode: {
       type: GraphQLString,
       args: {
