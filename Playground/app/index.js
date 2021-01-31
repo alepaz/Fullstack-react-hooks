@@ -3,7 +3,10 @@ import {Navigator} from 'react-native';
 
 export default class App extends Component {
   configureScene(route, navigator) {
-    //handle configure scene
+    if (route.notifications === true) {
+      return Navigator.SceneConfigs.FloatFromBottom;
+    }
+    return Navigator.SceneConfigs.FloatFromRight;
   }
 
   renderScene(route, navigator) {
