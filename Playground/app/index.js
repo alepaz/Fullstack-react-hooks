@@ -1,10 +1,14 @@
 import React, {Component} from 'react';
-import {Navigator} from 'react-native';
+import {Navigator, Platform} from 'react-native';
 
 export default class App extends Component {
   configureScene(route, navigator) {
     if (route.notifications === true) {
-      return Navigator.SceneConfigs.FloatFromBottom;
+      if (Platform.OS === 'android') {
+        return Navigator.SceneConfigs.FloatFromBottomAndroid;
+      } else {
+        return Navigator.SceneConfigs.FloatFromBottom;
+      }
     }
     return Navigator.SceneConfigs.FloatFromRight;
   }
