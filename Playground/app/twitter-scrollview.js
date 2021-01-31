@@ -1,35 +1,58 @@
-import React, {PropTypes} from 'react';
-import {View, Text, ScrollView, Image} from 'react-native';
+import React, {Component, PropTypes} from 'react';
+import {View, Text, ScrollView, Image, ListView} from 'react-native';
 
-Feed.propTypes = {
-  tweets: PropTypes.arrayOf(
-    PropTypes.shape({
-      name: PropTypes.string.isRequired,
-      user_id: PropTypes.string.isRequired,
-      avatar: PropTypes.string.isRequired,
-      text: PropTypes.string.isRequired,
-      numberOfFavorites: PropTypes.number.isRequired,
-      numberOfRetweets: PropTypes.number.isRequired,
-    }),
-  ).isRequired,
-};
+class Feed extends Component {
+  static props = {
+    tweets: PropTypes.arrayOf(
+      PropTypes.shape({
+        name: PropTypes.string.isRequired,
+        user_id: PropTypes.string.isRequired,
+        avatar: PropTypes.string.isRequired,
+        text: PropTypes.string.isRequired,
+        numberOfFavorites: PropTypes.number.isRequired,
+        numberOfRetweets: PropTypes.number.isRequired,
+      }),
+    ).isRequired,
+  };
+  constructor(props) {
+    super(props);
 
-function Feed({tweets}) {
-  return (
-    <ScrollView>
-      {tweets.map((tweet) => (
+    this.ds = new FlatList.DataSource({
+      rowHasChanged: (r1, r2) => r1 !== r2,
+    });
+
+    this.state = {
+      dataSource: this.ds.cloneWithRows(this.props.tweets),
+    };
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.tweets !== this.props.tweets) {
+      this.setState({
+        dataSource: this.ds.cloneWithRows(nextProps.tweets),
+      });
+    }
+  }
+
+  renderRow = ({tweet}) => {
+    return (
+      <View>
         <View>
-          <View>
-            <Image src={tweet.avatar} />
-            <Text>{tweet.name}</Text>
-          </View>
-          <Text>{tweet.text}</Text>
-          <View>
-            <Text>Favs: {tweet.numberOfFavorites}</Text>
-            <Text>RTs: {tweet.numberOfRetweets}</Text>
-          </View>
+          <Image src={tweet.avatar} />
+          <Text>{tweet.name}</Text>
         </View>
-      ))}
-    </ScrollView>
-  );
+        <Text>{tweet.text}</Text>
+        <View>
+          <Text>Favs: {tweet.numberOfFavorites}</Text>
+          <Text>RTs: {tweet.numberOfRetweets}</Text>
+        </View>
+      </View>
+    );
+  };
+
+  render() {
+    return (
+      <ListView renderRow={this.renderRow} dataSource={this.state.dataSource} />
+    );
+  }
 }
